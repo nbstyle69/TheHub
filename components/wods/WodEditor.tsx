@@ -329,7 +329,7 @@ export default function WodEditor({
               {wodRows.map((parsed, i) => {
                 const showWeight = movementRowShowsWeight(parsed);
                 return (
-                  <div key={i} className="flex gap-2 items-center">
+                  <div key={i} className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                     <input type="number" min={0} inputMode="numeric"
                       className={`${inp} !w-16 shrink-0 text-center px-2`}
                       value={parsed.reps ?? ''}
@@ -340,31 +340,35 @@ export default function WodEditor({
                       value={parsed.name}
                       onChange={e => patchMovement(i, { name: e.target.value })}
                       placeholder="Exercice (rechercher…)" aria-label="Exercice" />
-                    {showWeight && (
-                      <>
-                        <div className="relative w-24 shrink-0">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♂</span>
-                          <input type="number" min={0} step={0.5} inputMode="decimal"
-                            className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
-                            value={parsed.weightKg ?? ''}
-                            onChange={e => patchMovement(i, { weightKg: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                            placeholder="H" aria-label="Charge hommes en kilos" />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
-                        </div>
-                        <div className="relative w-24 shrink-0">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♀</span>
-                          <input type="number" min={0} step={0.5} inputMode="decimal"
-                            className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
-                            value={parsed.weightKgWomen ?? ''}
-                            onChange={e => patchMovement(i, { weightKgWomen: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                            placeholder="F" aria-label="Charge femmes en kilos" />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
-                        </div>
-                      </>
-                    )}
-                    <button type="button" onClick={() => removeMovement(i)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-red-400 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Sur mobile, les charges et la corbeille passent sur une seconde ligne
+                        pour laisser la première au nom de l'exercice. */}
+                    <div className={`flex gap-2 items-center ${showWeight ? 'basis-full sm:basis-auto' : ''}`}>
+                      {showWeight && (
+                        <>
+                          <div className="relative w-24 shrink-0">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♂</span>
+                            <input type="number" min={0} step={0.5} inputMode="decimal"
+                              className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
+                              value={parsed.weightKg ?? ''}
+                              onChange={e => patchMovement(i, { weightKg: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                              placeholder="H" aria-label="Charge hommes en kilos" />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
+                          </div>
+                          <div className="relative w-24 shrink-0">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♀</span>
+                            <input type="number" min={0} step={0.5} inputMode="decimal"
+                              className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
+                              value={parsed.weightKgWomen ?? ''}
+                              onChange={e => patchMovement(i, { weightKgWomen: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                              placeholder="F" aria-label="Charge femmes en kilos" />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
+                          </div>
+                        </>
+                      )}
+                      <button type="button" onClick={() => removeMovement(i)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-red-400 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
