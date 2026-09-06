@@ -2,12 +2,15 @@
 
 import { Dispatch, SetStateAction, useState } from 'react';
 import { Plus, Trash2, X, Loader2, Video, Dumbbell } from 'lucide-react';
+import { MOVEMENT_CATALOG } from '@/lib/movements';
 import {
-  MOVEMENT_CATALOG,
-  isWeightedMovement,
-  serializeMovement,
-  parseMovementRow,
-} from '@/lib/movements';
+  EMPTY_MOVEMENT_ROW,
+  MovementRow,
+  movementRowShowsWeight,
+  movementRowsFromLines,
+  serializeMovementRows,
+  updateMovementRow,
+} from '@/lib/wodMovementRows';
 import {
   EMPTY_STRENGTH_ENTRY,
   StrengthEntry,
@@ -84,14 +87,22 @@ export default function WodEditor({
       .filter((e): e is StrengthEntry => e !== null),
   );
 
-  const wodRows = movements.filter(l => !isStrengthLine(l));
+  // Même principe pour le metcon : les lignes sont éditées structurées et
+  // sérialisées à l'écriture seulement (cf. `lib/wodMovementRows.ts`).
+  const [wodRows, setWodRows] = useState<MovementRow[]>(
+    () => movementRowsFromLines(movements.filter(l => !isStrengthLine(l))),
+  );
 
-  const commit = (wod: string[], strength: StrengthEntry[]) =>
-    setMovements([...strength.map(serializeStrength).filter(Boolean), ...wod]);
+  const commit = (wod: MovementRow[], strength: StrengthEntry[]) =>
+    setMovements([...strength.map(serializeStrength).filter(Boolean), ...serializeMovementRows(wod)]);
 
-  const addMovement = () => commit([...wodRows, ''], strengthRows);
-  const removeMovement = (i: number) => commit(wodRows.filter((_, idx) => idx !== i), strengthRows);
-  const setMovement = (i: number, v: string) => commit(wodRows.map((x, idx) => (idx === i ? v : x)), strengthRows);
+  const setWod = (rows: MovementRow[]) => {
+    setWodRows(rows);
+    commit(rows, strengthRows);
+  };
+  const addMovement = () => setWod([...wodRows, { ...EMPTY_MOVEMENT_ROW }]);
+  const removeMovement = (i: number) => setWod(wodRows.filter((_, idx) => idx !== i));
+  const patchMovement = (i: number, patch: Partial<MovementRow>) => setWod(updateMovementRow(wodRows, i, patch));
 
   const setStrength = (rows: StrengthEntry[]) => {
     setStrengthRows(rows);
@@ -106,7 +117,7 @@ export default function WodEditor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#111111] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#111111] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/8">
           <h2 className="text-lg font-black text-white">{heading}</h2>
           <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
@@ -315,52 +326,49 @@ export default function WodEditor({
               {MOVEMENT_CATALOG.map(mv => <option key={mv.name} value={mv.name} />)}
             </datalist>
             <div className="space-y-2">
-              {wodRows.map((line, i) => {
-                const parsed = parseMovementRow(line);
-                const showWeight = parsed.weightKg != null || parsed.weightKgWomen != null || isWeightedMovement(parsed.name);
-                const update = (reps: number | null, name: string, weightKg: number | null, weightKgWomen: number | null) => {
-                  const w  = showWeight ? weightKg : null;
-                  const wW = showWeight ? weightKgWomen : null;
-                  if (reps == null) setMovement(i, serializeMovement(0, name, w, wW).replace(/^0\s*/, '').trim());
-                  else              setMovement(i, serializeMovement(reps, name, w, wW));
-                };
+              {wodRows.map((parsed, i) => {
+                const showWeight = movementRowShowsWeight(parsed);
                 return (
-                  <div key={i} className="flex gap-2 items-center">
+                  <div key={i} className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                     <input type="number" min={0} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={parsed.reps ?? ''}
-                      onChange={e => update(e.target.value === '' ? null : parseInt(e.target.value, 10), parsed.name, parsed.weightKg, parsed.weightKgWomen)}
+                      onChange={e => patchMovement(i, { reps: e.target.value === '' ? null : parseInt(e.target.value, 10) })}
                       placeholder="Reps" aria-label="Répétitions" />
                     <input list="box-movement-catalog"
                       className={`${inp} flex-1 min-w-0`}
                       value={parsed.name}
-                      onChange={e => update(parsed.reps, e.target.value, parsed.weightKg, parsed.weightKgWomen)}
+                      onChange={e => patchMovement(i, { name: e.target.value })}
                       placeholder="Exercice (rechercher…)" aria-label="Exercice" />
-                    {showWeight && (
-                      <>
-                        <div className="relative w-24 shrink-0">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♂</span>
-                          <input type="number" min={0} step={0.5} inputMode="decimal"
-                            className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
-                            value={parsed.weightKg ?? ''}
-                            onChange={e => update(parsed.reps, parsed.name, e.target.value === '' ? null : parseFloat(e.target.value), parsed.weightKgWomen)}
-                            placeholder="H" aria-label="Charge hommes en kilos" />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
-                        </div>
-                        <div className="relative w-24 shrink-0">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♀</span>
-                          <input type="number" min={0} step={0.5} inputMode="decimal"
-                            className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
-                            value={parsed.weightKgWomen ?? ''}
-                            onChange={e => update(parsed.reps, parsed.name, parsed.weightKg, e.target.value === '' ? null : parseFloat(e.target.value))}
-                            placeholder="F" aria-label="Charge femmes en kilos" />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
-                        </div>
-                      </>
-                    )}
-                    <button type="button" onClick={() => removeMovement(i)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-red-400 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Sur mobile, les charges et la corbeille passent sur une seconde ligne
+                        pour laisser la première au nom de l'exercice. */}
+                    <div className={`flex gap-2 items-center ${showWeight ? 'basis-full sm:basis-auto' : ''}`}>
+                      {showWeight && (
+                        <>
+                          <div className="relative w-24 shrink-0">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♂</span>
+                            <input type="number" min={0} step={0.5} inputMode="decimal"
+                              className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
+                              value={parsed.weightKg ?? ''}
+                              onChange={e => patchMovement(i, { weightKg: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                              placeholder="H" aria-label="Charge hommes en kilos" />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
+                          </div>
+                          <div className="relative w-24 shrink-0">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 pointer-events-none">♀</span>
+                            <input type="number" min={0} step={0.5} inputMode="decimal"
+                              className={`${inp} !px-0 !pl-7 !pr-6 text-center`}
+                              value={parsed.weightKgWomen ?? ''}
+                              onChange={e => patchMovement(i, { weightKgWomen: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                              placeholder="F" aria-label="Charge femmes en kilos" />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 pointer-events-none">kg</span>
+                          </div>
+                        </>
+                      )}
+                      <button type="button" onClick={() => removeMovement(i)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-red-400 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -401,13 +409,13 @@ export default function WodEditor({
                   </div>
                   <div className="flex gap-2 items-center">
                     <input type="number" min={1} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={e.sets}
                       onChange={ev => updateStrength(i, { sets: parseInt(ev.target.value, 10) || 1 })}
                       placeholder="5" aria-label="Séries" />
                     <span className="text-gray-500 text-sm">×</span>
                     <input type="number" min={1} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={e.reps}
                       onChange={ev => updateStrength(i, { reps: parseInt(ev.target.value, 10) || 1 })}
                       placeholder="3" aria-label="Répétitions par série" />
