@@ -331,7 +331,7 @@ export default function WodEditor({
                 return (
                   <div key={i} className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                     <input type="number" min={0} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={parsed.reps ?? ''}
                       onChange={e => patchMovement(i, { reps: e.target.value === '' ? null : parseInt(e.target.value, 10) })}
                       placeholder="Reps" aria-label="Répétitions" />
@@ -409,13 +409,13 @@ export default function WodEditor({
                   </div>
                   <div className="flex gap-2 items-center">
                     <input type="number" min={1} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={e.sets}
                       onChange={ev => updateStrength(i, { sets: parseInt(ev.target.value, 10) || 1 })}
                       placeholder="5" aria-label="Séries" />
                     <span className="text-gray-500 text-sm">×</span>
                     <input type="number" min={1} inputMode="numeric"
-                      className={`${inp} !w-16 shrink-0 text-center px-2`}
+                      className={`${inp} !w-20 shrink-0 text-center px-2`}
                       value={e.reps}
                       onChange={ev => updateStrength(i, { reps: parseInt(ev.target.value, 10) || 1 })}
                       placeholder="3" aria-label="Répétitions par série" />
