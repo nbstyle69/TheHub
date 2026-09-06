@@ -5,41 +5,7 @@ import { ArrowLeft, Trophy } from 'lucide-react';
 import LeaderboardClient from './LeaderboardClient';
 import { computeBracketStandings, type BracketMatchRow } from '@/lib/bracket';
 import { rankWodScores, formatWodScore } from '@/lib/tournamentScoring';
-
-export interface ParticipantRow {
-  rank: number;
-  athlete_id: string;
-  total_score: number;
-  username: string | null;
-  level: string | null;
-  elo: number | null;
-  placement?: string | null;
-  elo_change?: number | null;
-}
-
-export interface WodRanking {
-  wod_id: string;
-  wod_title: string;
-  order_index: number;
-  scores: {
-    rank: number;
-    athlete_id: string;
-    score_value: string;
-    score_display: string;
-    is_ex_aequo: boolean;
-    username: string | null;
-    level: string | null;
-  }[];
-}
-
-export interface DivisionRanking {
-  division_id: string;
-  name: string;
-  level: number;
-  promote_count: number;
-  relegate_count: number;
-  rows: ParticipantRow[];
-}
+import type { ParticipantRow, WodRanking, DivisionRanking } from './types';
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = await params;

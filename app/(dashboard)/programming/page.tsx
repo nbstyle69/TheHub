@@ -13,17 +13,9 @@ import {
   BLOCK_COLOR, BLOCK_LABEL, DAY_LABELS, EMPTY_WOD_FORM, TYPE_COLOR,
   WodFormState, formatCap, movementLines, sharedWodColumns,
 } from '@/lib/wodFields';
+import { disciplineLabel } from '@/lib/disciplines';
 
 const DISCIPLINES = ['crossfit', 'hyrox', 'hybrid', 'haltero', 'endurance'];
-export const DISCIPLINE_LABEL: Record<string, string> = {
-  crossfit: 'Functional',
-  hyrox: 'Hybrid',
-  hybrid: 'Hybrid',
-  functional: 'Functional',
-  haltero: 'Haltéro',
-  endurance: 'Endurance',
-};
-export const disciplineLabel = (d: string) => DISCIPLINE_LABEL[d] ?? d;
 const LEVELS = ['all', 'beginner', 'intermediate', 'advanced'];
 const LEVEL_LABEL: Record<string, string> = {
   all: 'Tous niveaux', beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé',
