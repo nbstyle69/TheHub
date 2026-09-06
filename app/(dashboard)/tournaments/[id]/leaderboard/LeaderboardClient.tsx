@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trophy, Dumbbell, Star, Layers, ArrowUp, ArrowDown } from 'lucide-react';
-import type { ParticipantRow, WodRanking, DivisionRanking } from './page';
+import type { ParticipantRow, WodRanking, DivisionRanking } from './types';
 
 interface Props {
   general: ParticipantRow[];
